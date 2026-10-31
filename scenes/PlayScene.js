@@ -31,6 +31,7 @@ export default class PlayScene extends Phaser.Scene {
         this.tiles = [];
         this.cells = [];
         this.tileSprites = [];
+        this.controlButtons = [];
 
         this.selectedImage = "alligator";
 
@@ -51,83 +52,532 @@ export default class PlayScene extends Phaser.Scene {
 
         this.boardContainer = null;
 
+        this.resizeTimer = null;
+        this.isUpdatingGameSize = false;
+        this.isApplyingLayout = false;
+
+        this.victoryObjects = [];
+        this.victoryButton = null;
+
         this.commandHandler = new CommandHandler(this);
+
+        this.handleResize = this.handleResize.bind(this);
     }
 
     create() {
-    this.selectedImage =
-        this.registry.get("selectedImage") || "alligator";
-    
-    this.shuffleCount =
-        this.registry.get("shuffleCount") || 80;
-    
-    this.commandHandler.reset();
-    
-    this.moveCount = 0;
-    
-    this.isDragging = false;
-    this.isAnimating = false;
-    this.isGameOver = false;
-    
-    this.draggedTile = null;
-    this.dragStartPosition = null;
-    this.dragStartCoordinates = null;
-    this.dragPointerOffset = null;
-    
-    this.tiles = [];
-    this.cells = [];
-    this.tileSprites = [];
-    
-    this.boardContainer = null;
-    
-    /*
-     * Calculate the exact square board dimensions
-     * and center it on the screen.
-     */
-    this.layout = calculatePuzzleLayout(
-        this.scale.width,
-        this.scale.height,
-        this.gridSize
-    );
-    
-    this.screenOrientation =
-        this.layout.orientation;
-    
-    this.boardSize = this.layout.boardSize;
-    
-    this.boardX = this.layout.boardX;
-    this.boardY = this.layout.boardY;
-    
-    this.tileSize = this.layout.tileSize;
-    
-    this.tileDisplaySize =
-        this.layout.tileDisplaySize;
-    
-    /*
-     * No heading, subtitle, move counter,
-     * footer, or instruction text.
-     */
-    this.moveText = null;
-    
-    /*
-     * Create the puzzle.
-     */
-    this.createSolvedBoard();
-    
-    this.shuffleBoard();
-    
-    this.createBoardCells();
-    
-    this.createTileSprites();
-    
-    /*
-     * Create the four responsive controls.
-     */
-    createGameControls(
-        this,
-        this.layout
-    );
-}
+        this.selectedImage =
+            this.registry.get("selectedImage") || "alligator";
+
+        this.shuffleCount =
+            this.registry.get("shuffleCount") || 80;
+
+        this.commandHandler.reset();
+
+        this.moveCount = 0;
+
+        this.isDragging = false;
+        this.isAnimating = false;
+        this.isGameOver = false;
+
+        this.draggedTile = null;
+        this.dragStartPosition = null;
+        this.dragStartCoordinates = null;
+        this.dragPointerOffset = null;
+
+        this.tiles = [];
+        this.cells = [];
+        this.tileSprites = [];
+        this.controlButtons = [];
+
+        this.boardContainer = null;
+
+        this.victoryObjects = [];
+        this.victoryButton = null;
+
+        this.moveText = null;
+
+        this.updateGameSize();
+
+        this.calculateLayout();
+
+        this.createSolvedBoard();
+
+        this.shuffleBoard();
+
+        this.createBoardCells();
+
+        this.createTileSprites();
+
+        this.controlButtons = createGameControls(
+            this,
+            this.layout
+        );
+
+        this.registerResizeListeners();
+
+        this.events.once(
+            Phaser.Scenes.Events.SHUTDOWN,
+            this.shutdown,
+            this
+        );
+    }
+
+    updateGameSize() {
+        const width = Math.max(
+            1,
+            window.innerWidth
+        );
+
+        const height = Math.max(
+            1,
+            window.innerHeight
+        );
+
+        if (
+            this.scale.width === width &&
+            this.scale.height === height
+        ) {
+            return;
+        }
+
+        this.isUpdatingGameSize = true;
+
+        this.scale.setGameSize(
+            width,
+            height
+        );
+
+        this.isUpdatingGameSize = false;
+    }
+
+    registerResizeListeners() {
+        this.scale.on(
+            Phaser.Scale.Events.RESIZE,
+            this.handleResize,
+            this
+        );
+
+        window.addEventListener(
+            "resize",
+            this.handleResize
+        );
+
+        window.addEventListener(
+            "orientationchange",
+            this.handleResize
+        );
+    }
+
+    shutdown() {
+        this.scale.off(
+            Phaser.Scale.Events.RESIZE,
+            this.handleResize,
+            this
+        );
+
+        window.removeEventListener(
+            "resize",
+            this.handleResize
+        );
+
+        window.removeEventListener(
+            "orientationchange",
+            this.handleResize
+        );
+
+        if (this.resizeTimer) {
+            this.resizeTimer.remove(false);
+            this.resizeTimer = null;
+        }
+
+        this.input.off(
+            "dragstart",
+            this.handleDragStart,
+            this
+        );
+
+        this.input.off(
+            "drag",
+            this.handleDrag,
+            this
+        );
+
+        this.input.off(
+            "dragend",
+            this.handleDragEnd,
+            this
+        );
+    }
+
+    handleResize() {
+        if (
+            !this.scene.isActive() ||
+            this.isUpdatingGameSize ||
+            this.isApplyingLayout
+        ) {
+            return;
+        }
+
+        if (this.resizeTimer) {
+            this.resizeTimer.remove(false);
+        }
+
+        this.resizeTimer = this.time.delayedCall(
+            50,
+            () => {
+                this.resizeTimer = null;
+
+                if (!this.scene.isActive()) {
+                    return;
+                }
+
+                this.updateGameSize();
+
+                this.applyResponsiveLayout();
+            }
+        );
+    }
+
+    calculateLayout() {
+        this.layout = calculatePuzzleLayout(
+            this.scale.width,
+            this.scale.height,
+            this.gridSize
+        );
+
+        this.screenOrientation =
+            this.layout.orientation;
+
+        this.boardSize = this.layout.boardSize;
+
+        this.boardX = this.layout.boardX;
+        this.boardY = this.layout.boardY;
+
+        this.tileSize = this.layout.tileSize;
+
+        this.tileDisplaySize =
+            this.layout.tileDisplaySize;
+    }
+
+    applyResponsiveLayout() {
+        if (this.isApplyingLayout) {
+            return;
+        }
+
+        this.isApplyingLayout = true;
+
+        try {
+            this.calculateLayout();
+
+            this.updateBoardLayout();
+
+            this.updateTileLayout();
+
+            this.updateControlsLayout();
+
+            this.updateVictoryLayout();
+
+            this.refreshCellBackgrounds();
+        } finally {
+            this.isApplyingLayout = false;
+        }
+    }
+
+    updateBoardLayout() {
+        if (!this.cells.length) {
+            return;
+        }
+
+        this.cells.forEach((cell, position) => {
+            cell.setPosition(
+                this.getCellX(position),
+                this.getCellY(position)
+            );
+
+            cell.setSize(
+                this.tileSize,
+                this.tileSize
+            );
+
+            const background = cell.list[0];
+
+            if (background) {
+                background.setSize(
+                    this.tileSize,
+                    this.tileSize
+                );
+            }
+        });
+    }
+
+    updateTileLayout() {
+        if (!this.tileSprites.length) {
+            return;
+        }
+
+        const activePointer =
+            this.input.activePointer;
+
+        this.tileSprites.forEach((sprite) => {
+            if (!sprite || !sprite.active) {
+                return;
+            }
+
+            const tileId = sprite.getData("tileId");
+
+            const tile = this.tiles.find(
+                (item) => item.id === tileId
+            );
+
+            if (!tile) {
+                return;
+            }
+
+            /*
+             * A dragged tile remains outside its cell.
+             * Keep it attached to the active pointer.
+             */
+            if (
+                this.isDragging &&
+                sprite === this.draggedTile?.sprite
+            ) {
+                this.tweens.killTweensOf(sprite);
+
+                sprite.setPosition(
+                    activePointer.x,
+                    activePointer.y
+                );
+
+                sprite.setAlpha(0.95);
+
+                this.restoreTileDisplaySize(sprite);
+
+                this.dragPointerOffset = {
+                    x: 0,
+                    y: 0
+                };
+
+                return;
+            }
+
+            /*
+             * Stop any animation that was using the old
+             * cell coordinates before the orientation change.
+             */
+            this.tweens.killTweensOf(sprite);
+
+            /*
+             * The logical tile position is authoritative.
+             * Reparent the existing sprite to its current cell.
+             */
+            const destinationCell =
+                this.cells[tile.position];
+
+            if (!destinationCell) {
+                return;
+            }
+
+            destinationCell.add(sprite);
+
+            sprite.setPosition(
+                this.tileSize / 2,
+                this.tileSize / 2
+            );
+
+            sprite.setAlpha(1);
+
+            sprite.setDepth(0);
+
+            this.restoreTileDisplaySize(sprite);
+
+            sprite.setData(
+                "cellPosition",
+                tile.position
+            );
+
+            tile.sprite = sprite;
+        });
+
+        /*
+         * If a resize interrupted a tile animation,
+         * the tile has already been placed in its current
+         * logical position above.
+         */
+        if (this.isAnimating) {
+            this.isAnimating = false;
+        }
+
+        /*
+         * Keep the currently dragged tile outside its cell
+         * and preserve its drag state.
+         */
+        if (this.isDragging && this.draggedTile) {
+            this.draggedTile.sprite =
+                this.draggedTile.sprite || null;
+        }
+    }
+
+    updateControlsLayout() {
+        if (!this.controlButtons.length) {
+            return;
+        }
+
+        const controls = [
+            {
+                label: "UNDO",
+                color: 0x18243a
+            },
+            {
+                label: "SHUFFLE",
+                color: 0x12344a
+            },
+            {
+                label: "RESTART",
+                color: 0x18243a
+            },
+            {
+                label: "MENU",
+                color: 0x18243a
+            }
+        ];
+
+        const positions = [];
+
+        if (this.layout.orientation === "portrait") {
+            const gap = 6;
+            const margin = 6;
+
+            const buttonWidth =
+                (
+                    this.layout.width -
+                    margin * 2 -
+                    gap * 3
+                ) / 4;
+
+            const startX =
+                margin + buttonWidth / 2;
+
+            controls.forEach((control, index) => {
+                positions.push({
+                    x: startX + index * (
+                        buttonWidth + gap
+                    ),
+                    y: this.layout.controlsY,
+                    width: buttonWidth,
+                    height: this.layout.buttonHeight
+                });
+            });
+        } else {
+            const verticalGap = 20;
+
+            const centerY =
+                this.layout.height / 2;
+
+            const topY =
+                centerY -
+                (
+                    this.layout.buttonHeight +
+                    verticalGap
+                ) / 2;
+
+            const bottomY =
+                centerY +
+                (
+                    this.layout.buttonHeight +
+                    verticalGap
+                ) / 2;
+
+            const buttonPositions = [
+                {
+                    x: this.layout.leftControlsX,
+                    y: topY
+                },
+                {
+                    x: this.layout.leftControlsX,
+                    y: bottomY
+                },
+                {
+                    x: this.layout.rightControlsX,
+                    y: topY
+                },
+                {
+                    x: this.layout.rightControlsX,
+                    y: bottomY
+                }
+            ];
+
+            buttonPositions.forEach((position) => {
+                positions.push({
+                    x: position.x,
+                    y: position.y,
+                    width: this.layout.sideButtonWidth,
+                    height: this.layout.buttonHeight
+                });
+            });
+        }
+
+        this.controlButtons.forEach(
+            (button, index) => {
+                const position = positions[index];
+
+                if (!button || !position) {
+                    return;
+                }
+
+                const background = button.background;
+                const text = button.text;
+
+                background.setPosition(
+                    position.x,
+                    position.y
+                );
+
+                background.setSize(
+                    position.width,
+                    position.height
+                );
+
+                /*
+                 * Refresh the interactive hit area to match
+                 * the resized button rectangle.
+                 */
+                background.setInteractive({
+                    useHandCursor: true
+                });
+
+                text.setPosition(
+                    position.x,
+                    position.y
+                );
+
+                text.setScale(1);
+
+                const fontSize = Math.max(
+                    10,
+                    Math.min(
+                        18,
+                        Math.floor(position.width / 5.5)
+                    )
+                );
+
+                text.setFontSize(fontSize);
+
+                const maximumTextWidth = Math.max(
+                    1,
+                    position.width - 8
+                );
+
+                if (text.width > maximumTextWidth) {
+                    text.setScale(
+                        maximumTextWidth / text.width
+                    );
+                }
+
+                background.setDepth(0);
+                text.setDepth(1);
+            }
+        );
+    }
 
     createSolvedBoard() {
         this.tiles = [];
@@ -148,13 +598,13 @@ export default class PlayScene extends Phaser.Scene {
     }
 
     shuffleBoard() {
-        /*
-         * Shuffle using legal adjacent swaps.
-         * This guarantees a solvable puzzle.
-         */
         let previousBlankPosition = -1;
 
-        for (let i = 0; i < this.shuffleCount; i++) {
+        for (
+            let i = 0;
+            i < this.shuffleCount;
+            i++
+        ) {
             const blankTile = this.tiles.find(
                 (tile) => tile.isEmpty
             );
@@ -264,6 +714,11 @@ export default class PlayScene extends Phaser.Scene {
             if (!background) {
                 return;
             }
+
+            background.setSize(
+                this.tileSize,
+                this.tileSize
+            );
 
             const tile = this.getTileAtPosition(position);
 
@@ -809,6 +1264,10 @@ export default class PlayScene extends Phaser.Scene {
     }
 
     showVictory() {
+        if (this.isGameOver) {
+            return;
+        }
+
         this.isGameOver = true;
 
         const width = this.scale.width;
@@ -825,7 +1284,7 @@ export default class PlayScene extends Phaser.Scene {
 
         overlay.setDepth(200);
 
-        this.add.text(
+        const title = this.add.text(
             width / 2,
             height / 2 - 70,
             "PUZZLE SOLVED!",
@@ -838,7 +1297,7 @@ export default class PlayScene extends Phaser.Scene {
             }
         ).setOrigin(0.5).setDepth(201);
 
-        this.add.text(
+        const message = this.add.text(
             width / 2,
             height / 2,
             `You reconstructed the picture!\nMoves: ${this.moveCount}`,
@@ -851,7 +1310,13 @@ export default class PlayScene extends Phaser.Scene {
             }
         ).setOrigin(0.5).setDepth(201);
 
-        const playAgainButton = new Button(
+        this.victoryObjects = [
+            overlay,
+            title,
+            message
+        ];
+
+        this.victoryButton = new Button(
             this,
             width / 2,
             height / 2 + 100,
@@ -863,6 +1328,59 @@ export default class PlayScene extends Phaser.Scene {
             }
         );
 
-        playAgainButton.setDepth(201);
+        this.victoryButton.setDepth(201);
+    }
+
+    updateVictoryLayout() {
+        if (
+            !this.isGameOver ||
+            this.victoryObjects.length === 0
+        ) {
+            return;
+        }
+
+        const width = this.scale.width;
+        const height = this.scale.height;
+
+        const [overlay, title, message] =
+            this.victoryObjects;
+
+        overlay.setPosition(
+            width / 2,
+            height / 2
+        );
+
+        overlay.setSize(
+            width,
+            height
+        );
+
+        title.setPosition(
+            width / 2,
+            height / 2 - 70
+        );
+
+        message.setPosition(
+            width / 2,
+            height / 2
+        );
+
+        if (this.victoryButton) {
+            const background =
+                this.victoryButton.background;
+
+            const text =
+                this.victoryButton.text;
+
+            background.setPosition(
+                width / 2,
+                height / 2 + 100
+            );
+
+            text.setPosition(
+                width / 2,
+                height / 2 + 100
+            );
+        }
     }
 }
