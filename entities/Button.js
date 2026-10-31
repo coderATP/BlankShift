@@ -10,71 +10,449 @@ export class Button {
         color = 0x12344a
     ) {
         this.scene = scene;
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.label = label;
+        this.callback = callback;
+        this.baseColor = color;
+
+        this.isPointerOver = false;
+        this.isPressed = false;
+
+        this.container = scene.add.container(x, y);
+
+        this.shadow = scene.add.rectangle(
+            0,
+            4,
+            width,
+            height,
+            0x000000,
+            0.45
+        ).setOrigin(0.5);
+
+        this.outerGlow = scene.add.rectangle(
+            0,
+            0,
+            width,
+            height,
+            0x20d9ff,
+            0.08
+        ).setOrigin(0.5);
 
         this.background = scene.add.rectangle(
-            x,
-            y,
+            0,
+            0,
             width,
             height,
             color
-        );
+        ).setOrigin(0.5);
 
         this.background.setStrokeStyle(
             2,
-            0x20d9ff
+            0x20d9ff,
+            0.95
         );
+
+        this.topHighlight = scene.add.rectangle(
+            0,
+            -height * 0.28,
+            Math.max(1, width - 8),
+            Math.max(2, height * 0.24),
+            0xffffff,
+            0.10
+        ).setOrigin(0.5);
+
+        this.bottomShade = scene.add.rectangle(
+            0,
+            height * 0.32,
+            Math.max(1, width - 4),
+            Math.max(2, height * 0.20),
+            0x000000,
+            0.14
+        ).setOrigin(0.5);
+
+        this.topBorder = scene.add.rectangle(
+            0,
+            -height / 2 + 2,
+            Math.max(1, width - 8),
+            2,
+            0xffffff,
+            0.30
+        ).setOrigin(0.5);
+
+        this.text = scene.add.text(
+            0,
+            0,
+            label,
+            {
+                fontFamily: "Arial",
+                fontSize: `${this.calculateFontSize(width, height)}px`,
+                fontStyle: "bold",
+                color: "#f2f8ff",
+                align: "center",
+                resolution: 2,
+                padding: {
+                    left: 1,
+                    right: 1,
+                    top: 2,
+                    bottom: 2
+                }
+            }
+        ).setOrigin(0.5);
+
+        this.text.setStroke(
+            "#07111f",
+            1
+        );
+
+        this.text.setShadow(
+            0,
+            1,
+            "#000000",
+            2,
+            false,
+            true
+        );
+
+        this.fitTextToButton(width, height);
+
+        this.container.add([
+            this.shadow,
+            this.outerGlow,
+            this.background,
+            this.topHighlight,
+            this.bottomShade,
+            this.topBorder,
+            this.text
+        ]);
 
         this.background.setInteractive({
             useHandCursor: true
         });
 
-        const fontSize = Math.max(
-            10,
-            Math.min(18, Math.floor(width / 5.5))
+        this.background.on(
+            "pointerover",
+            this.handlePointerOver,
+            this
         );
 
-        this.text = scene.add.text(
-            x,
-            y,
-            label,
-            {
-                fontFamily: "Arial",
-                fontSize: `${fontSize}px`,
-                fontStyle: "bold",
-                color: "#f2f6ff",
-                align: "center"
-            }
-        ).setOrigin(0.5);
+        this.background.on(
+            "pointerout",
+            this.handlePointerOut,
+            this
+        );
 
+        this.background.on(
+            "pointerdown",
+            this.handlePointerDown,
+            this
+        );
+
+        this.background.on(
+            "pointerup",
+            this.handlePointerUp,
+            this
+        );
+
+        this.background.on(
+            "pointerupoutside",
+            this.handlePointerOut,
+            this
+        );
+    }
+
+    calculateFontSize(width, height) {
+        const widthBasedSize = Math.floor(
+            width / 6
+        );
+
+        const heightBasedSize = Math.floor(
+            height * 0.32
+        );
+
+        return Math.max(
+            9,
+            Math.min(
+                18,
+                widthBasedSize,
+                heightBasedSize
+            )
+        );
+    }
+
+    fitTextToButton(width, height) {
         const maximumTextWidth = Math.max(
             1,
-            width - 8
+            width - 12
         );
 
-        if (this.text.width > maximumTextWidth) {
-            this.text.setScale(
-                maximumTextWidth / this.text.width
-            );
+        const maximumTextHeight = Math.max(
+            1,
+            height - 6
+        );
+
+        let fontSize = this.calculateFontSize(
+            width,
+            height
+        );
+
+        this.text.setFontSize(fontSize);
+        this.text.setScale(1);
+
+        while (
+            (
+                this.text.width > maximumTextWidth ||
+                this.text.height > maximumTextHeight
+            ) &&
+            fontSize > 9
+        ) {
+            fontSize--;
+
+            this.text.setFontSize(fontSize);
         }
 
-        this.background.on("pointerover", () => {
-            this.background.setFillStyle(0x174763);
-            this.text.setColor("#20d9ff");
-        });
+        this.text.setPosition(0, 0);
+    }
 
-        this.background.on("pointerout", () => {
-            this.background.setFillStyle(color);
-            this.text.setColor("#f2f6ff");
-        });
+    handlePointerOver() {
+        if (this.isPressed) {
+            return;
+        }
 
-        this.background.on("pointerdown", callback);
+        this.isPointerOver = true;
+
+        this.background.setFillStyle(
+            0x174763
+        );
+
+        this.background.setStrokeStyle(
+            2,
+            0x73edff,
+            1
+        );
+
+        this.outerGlow.setFillStyle(
+            0x20d9ff,
+            0.20
+        );
+
+        this.topHighlight.setFillStyle(
+            0xffffff,
+            0.17
+        );
+
+        this.text.setColor(
+            "#ffffff"
+        );
+
+        this.scene.tweens.add({
+            targets: this.container,
+            scaleX: 1.025,
+            scaleY: 1.025,
+            duration: 100,
+            ease: "Sine.easeOut"
+        });
+    }
+
+    handlePointerOut() {
+        this.isPointerOver = false;
+        this.isPressed = false;
+
+        this.restoreDefaultAppearance();
+
+        this.scene.tweens.add({
+            targets: this.container,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 100,
+            ease: "Sine.easeOut"
+        });
+    }
+
+    handlePointerDown(pointer) {
+        if (!this.background.input.enabled) {
+            return;
+        }
+
+        this.isPressed = true;
+
+        this.background.setFillStyle(
+            0x091522
+        );
+
+        this.background.setStrokeStyle(
+            2,
+            0x20d9ff,
+            1
+        );
+
+        this.outerGlow.setFillStyle(
+            0x20d9ff,
+            0.12
+        );
+
+        this.topHighlight.setFillStyle(
+            0xffffff,
+            0.05
+        );
+
+        this.bottomShade.setFillStyle(
+            0x000000,
+            0.25
+        );
+
+        this.text.setColor(
+            "#20d9ff"
+        );
+
+        this.scene.tweens.killTweensOf(
+            this.container
+        );
+
+        this.container.setScale(
+            0.97
+        );
+    }
+
+    handlePointerUp(pointer) {
+        if (!this.isPressed) {
+            return;
+        }
+
+        this.isPressed = false;
+
+        if (this.background.getBounds().contains(
+            pointer.x,
+            pointer.y
+        )) {
+            this.restoreDefaultAppearance();
+
+            this.scene.tweens.add({
+                targets: this.container,
+                scaleX: this.isPointerOver ? 1.025 : 1,
+                scaleY: this.isPointerOver ? 1.025 : 1,
+                duration: 100,
+                ease: "Sine.easeOut"
+            });
+
+            if (typeof this.callback === "function") {
+                this.callback();
+            }
+        } else {
+            this.restoreDefaultAppearance();
+        }
+    }
+
+    restoreDefaultAppearance() {
+        this.background.setFillStyle(
+            this.baseColor
+        );
+
+        this.background.setStrokeStyle(
+            2,
+            0x20d9ff,
+            0.95
+        );
+
+        this.outerGlow.setFillStyle(
+            0x20d9ff,
+            0.08
+        );
+
+        this.topHighlight.setFillStyle(
+            0xffffff,
+            0.10
+        );
+
+        this.bottomShade.setFillStyle(
+            0x000000,
+            0.14
+        );
+
+        this.text.setColor(
+            "#f2f8ff"
+        );
+    }
+
+    setPosition(x, y) {
+        this.x = x;
+        this.y = y;
+
+        this.container.setPosition(
+            x,
+            y
+        );
+
+        return this;
+    }
+
+    setSize(width, height) {
+        this.width = width;
+        this.height = height;
+
+        this.shadow.setSize(
+            width,
+            height
+        );
+
+        this.outerGlow.setSize(
+            width,
+            height
+        );
+
+        this.background.setSize(
+            width,
+            height
+        );
+
+        this.topHighlight.setPosition(
+            0,
+            -height * 0.28
+        );
+
+        this.topHighlight.setSize(
+            Math.max(1, width - 8),
+            Math.max(2, height * 0.24)
+        );
+
+        this.bottomShade.setPosition(
+            0,
+            height * 0.32
+        );
+
+        this.bottomShade.setSize(
+            Math.max(1, width - 4),
+            Math.max(2, height * 0.20)
+        );
+
+        this.topBorder.setPosition(
+            0,
+            -height / 2 + 2
+        );
+
+        this.topBorder.setSize(
+            Math.max(1, width - 8),
+            2
+        );
+
+        this.fitTextToButton(
+            width,
+            height
+        );
+
+        return this;
     }
 
     setDepth(depth) {
-        this.background.setDepth(depth);
-        this.text.setDepth(depth + 1);
+        this.container.setDepth(depth);
 
         return this;
+    }
+
+    destroy() {
+        this.container.destroy();
     }
 }
 
@@ -113,22 +491,24 @@ export function createGameControls(scene, layout) {
     const buttons = [];
 
     if (layout.orientation === "portrait") {
-        /*
-         * Four horizontally aligned buttons.
-         * All positioned beneath the board.
-         */
         const gap = 6;
         const margin = 6;
 
         const buttonWidth =
-            (layout.width - margin * 2 - gap * 3) / 4;
+            (
+                layout.width -
+                margin * 2 -
+                gap * 3
+            ) / 4;
 
         const startX =
             margin + buttonWidth / 2;
 
         controls.forEach((control, index) => {
             const x =
-                startX + index * (buttonWidth + gap);
+                startX + index * (
+                    buttonWidth + gap
+                );
 
             buttons.push(
                 new Button(
@@ -147,25 +527,23 @@ export function createGameControls(scene, layout) {
         return buttons;
     }
 
-    /*
-     * Landscape:
-     *
-     * UNDO        BOARD       RESTART
-     *
-     * SHUFFLE                 MENU
-     */
-
     const verticalGap = 20;
 
     const centerY = layout.height / 2;
 
     const topY =
         centerY -
-        (layout.buttonHeight + verticalGap) / 2;
+        (
+            layout.buttonHeight +
+            verticalGap
+        ) / 2;
 
     const bottomY =
         centerY +
-        (layout.buttonHeight + verticalGap) / 2;
+        (
+            layout.buttonHeight +
+            verticalGap
+        ) / 2;
 
     const positions = [
         {

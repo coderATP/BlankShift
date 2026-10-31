@@ -1,5 +1,6 @@
 import { CommandHandler } from "../CommandHandler.js";
 import { TileMovement } from "../movements/TileMovement.js";
+import { getEmptyTilePositions} from "../utils/EmptyTileConfig.js";
 
 import {
     Button,
@@ -58,7 +59,7 @@ export default class PlayScene extends Phaser.Scene {
 
         this.victoryObjects = [];
         this.victoryButton = null;
-
+        this.emptyTilePositions = [0]; 
         this.commandHandler = new CommandHandler(this);
 
         this.handleResize = this.handleResize.bind(this);
@@ -418,250 +419,240 @@ export default class PlayScene extends Phaser.Scene {
     }
 
     updateControlsLayout() {
-        if (!this.controlButtons.length) {
-            return;
-        }
-
-        const controls = [
-            {
-                label: "UNDO",
-                color: 0x18243a
-            },
-            {
-                label: "SHUFFLE",
-                color: 0x12344a
-            },
-            {
-                label: "RESTART",
-                color: 0x18243a
-            },
-            {
-                label: "MENU",
-                color: 0x18243a
-            }
-        ];
-
-        const positions = [];
-
-        if (this.layout.orientation === "portrait") {
-            const gap = 6;
-            const margin = 6;
-
-            const buttonWidth =
-                (
-                    this.layout.width -
-                    margin * 2 -
-                    gap * 3
-                ) / 4;
-
-            const startX =
-                margin + buttonWidth / 2;
-
-            controls.forEach((control, index) => {
-                positions.push({
-                    x: startX + index * (
-                        buttonWidth + gap
-                    ),
-                    y: this.layout.controlsY,
-                    width: buttonWidth,
-                    height: this.layout.buttonHeight
-                });
-            });
-        } else {
-            const verticalGap = 20;
-
-            const centerY =
-                this.layout.height / 2;
-
-            const topY =
-                centerY -
-                (
-                    this.layout.buttonHeight +
-                    verticalGap
-                ) / 2;
-
-            const bottomY =
-                centerY +
-                (
-                    this.layout.buttonHeight +
-                    verticalGap
-                ) / 2;
-
-            const buttonPositions = [
-                {
-                    x: this.layout.leftControlsX,
-                    y: topY
-                },
-                {
-                    x: this.layout.leftControlsX,
-                    y: bottomY
-                },
-                {
-                    x: this.layout.rightControlsX,
-                    y: topY
-                },
-                {
-                    x: this.layout.rightControlsX,
-                    y: bottomY
-                }
-            ];
-
-            buttonPositions.forEach((position) => {
-                positions.push({
-                    x: position.x,
-                    y: position.y,
-                    width: this.layout.sideButtonWidth,
-                    height: this.layout.buttonHeight
-                });
-            });
-        }
-
-        this.controlButtons.forEach(
-            (button, index) => {
-                const position = positions[index];
-
-                if (!button || !position) {
-                    return;
-                }
-
-                const background = button.background;
-                const text = button.text;
-
-                background.setPosition(
-                    position.x,
-                    position.y
-                );
-
-                background.setSize(
-                    position.width,
-                    position.height
-                );
-
-                /*
-                 * Refresh the interactive hit area to match
-                 * the resized button rectangle.
-                 */
-                background.setInteractive({
-                    useHandCursor: true
-                });
-
-                text.setPosition(
-                    position.x,
-                    position.y
-                );
-
-                text.setScale(1);
-
-                const fontSize = Math.max(
-                    10,
-                    Math.min(
-                        18,
-                        Math.floor(position.width / 5.5)
-                    )
-                );
-
-                text.setFontSize(fontSize);
-
-                const maximumTextWidth = Math.max(
-                    1,
-                    position.width - 8
-                );
-
-                if (text.width > maximumTextWidth) {
-                    text.setScale(
-                        maximumTextWidth / text.width
-                    );
-                }
-
-                background.setDepth(0);
-                text.setDepth(1);
-            }
-        );
+    if (!this.controlButtons.length) {
+        return;
     }
 
-    createSolvedBoard() {
-        this.tiles = [];
+    const positions = [];
+
+    if (this.layout.orientation === "portrait") {
+        const gap = 6;
+        const margin = 6;
+
+        const buttonWidth =
+            (
+                this.layout.width -
+                margin * 2 -
+                gap * 3
+            ) / 4;
+
+        const startX =
+            margin + buttonWidth / 2;
 
         for (
             let index = 0;
-            index < this.totalTiles;
+            index < this.controlButtons.length;
             index++
         ) {
-            this.tiles.push({
-                id: index,
-                correctPosition: index,
-                position: index,
-                isEmpty: index === 0,
-                sprite: null
+            positions.push({
+                x: startX + index * (
+                    buttonWidth + gap
+                ),
+                y: this.layout.controlsY,
+                width: buttonWidth,
+                height: this.layout.buttonHeight
             });
         }
+    } else {
+        const verticalGap = 20;
+
+        const centerY =
+            this.layout.height / 2;
+
+        const topY =
+            centerY -
+            (
+                this.layout.buttonHeight +
+                verticalGap
+            ) / 2;
+
+        const bottomY =
+            centerY +
+            (
+                this.layout.buttonHeight +
+                verticalGap
+            ) / 2;
+
+        const buttonPositions = [
+            {
+                x: this.layout.leftControlsX,
+                y: topY
+            },
+            {
+                x: this.layout.leftControlsX,
+                y: bottomY
+            },
+            {
+                x: this.layout.rightControlsX,
+                y: topY
+            },
+            {
+                x: this.layout.rightControlsX,
+                y: bottomY
+            }
+        ];
+
+        buttonPositions.forEach((position) => {
+            positions.push({
+                x: position.x,
+                y: position.y,
+                width: this.layout.sideButtonWidth,
+                height: this.layout.buttonHeight
+            });
+        });
     }
 
-    shuffleBoard() {
-        let previousBlankPosition = -1;
+    this.controlButtons.forEach(
+        (button, index) => {
+            const position = positions[index];
 
-        for (
-            let i = 0;
-            i < this.shuffleCount;
-            i++
-        ) {
-            const blankTile = this.tiles.find(
-                (tile) => tile.isEmpty
-            );
-
-            const adjacentPositions =
-                this.getAdjacentPositions(
-                    blankTile.position
-                );
-
-            let availablePositions =
-                adjacentPositions.filter(
-                    (position) => {
-                        return position !== previousBlankPosition;
-                    }
-                );
-
-            if (availablePositions.length === 0) {
-                availablePositions = adjacentPositions;
+            if (!button || !position) {
+                return;
             }
 
-            const targetPosition =
-                Phaser.Utils.Array.GetRandom(
-                    availablePositions
-                );
+            button.setPosition(
+                position.x,
+                position.y
+            );
 
-            const targetTile =
-                this.getTileAtPosition(targetPosition);
-
-            previousBlankPosition = blankTile.position;
-
-            this.exchangeTilePositions(
-                blankTile,
-                targetTile
+            button.setSize(
+                position.width,
+                position.height
             );
         }
+    );
+}
 
-        if (this.isSolved()) {
-            const blankTile = this.tiles.find(
-                (tile) => tile.isEmpty
-            );
+  createSolvedBoard() {
+    this.emptyTilePositions = getEmptyTilePositions(
+        this.selectedImage
+    );
 
-            const targetPosition =
-                Phaser.Utils.Array.GetRandom(
-                    this.getAdjacentPositions(
-                        blankTile.position
-                    )
+    this.tiles = [];
+
+    for (
+        let index = 0;
+        index < this.totalTiles;
+        index++
+    ) {
+        const isEmpty = this.emptyTilePositions.includes(
+            index
+        );
+
+        this.tiles.push({
+            id: index,
+            correctPosition: index,
+            position: index,
+            isEmpty,
+            sprite: null
+        });
+    }
+}
+shuffleBoard() {
+    let previousPosition = -1;
+
+    for (
+        let i = 0;
+        i < this.shuffleCount;
+        i++
+    ) {
+        const emptyTiles = this.tiles.filter(
+            (tile) => tile.isEmpty
+        );
+
+        const possibleMoves = [];
+
+        emptyTiles.forEach((emptyTile) => {
+            const adjacentPositions =
+                this.getAdjacentPositions(
+                    emptyTile.position
                 );
 
-            const targetTile =
-                this.getTileAtPosition(targetPosition);
+            adjacentPositions.forEach((position) => {
+                if (position === previousPosition) {
+                    return;
+                }
 
-            this.exchangeTilePositions(
-                blankTile,
-                targetTile
-            );
+                const tile = this.getTileAtPosition(
+                    position
+                );
+
+                if (tile && !tile.isEmpty) {
+                    possibleMoves.push({
+                        emptyTile,
+                        tile
+                    });
+                }
+            });
+        });
+
+        const availableMoves =
+            possibleMoves.length > 0
+                ? possibleMoves
+                : this.tiles
+                    .filter((tile) => tile.isEmpty)
+                    .flatMap((emptyTile) => {
+                        return this.getAdjacentPositions(
+                            emptyTile.position
+                        )
+                            .map((position) => ({
+                                emptyTile,
+                                tile: this.getTileAtPosition(
+                                    position
+                                )
+                            }))
+                            .filter((move) => {
+                                return (
+                                    move.tile &&
+                                    !move.tile.isEmpty
+                                );
+                            });
+                    });
+
+        if (availableMoves.length === 0) {
+            break;
+        }
+
+        const move = Phaser.Utils.Array.GetRandom(
+            availableMoves
+        );
+
+        previousPosition = move.emptyTile.position;
+
+        this.exchangeTilePositions(
+            move.emptyTile,
+            move.tile
+        );
+    }
+
+    if (this.isSolved()) {
+        const emptyTiles = this.tiles.filter(
+            (tile) => tile.isEmpty
+        );
+
+        for (const emptyTile of emptyTiles) {
+            const adjacentPositions =
+                this.getAdjacentPositions(
+                    emptyTile.position
+                );
+
+            const movableTile = adjacentPositions
+                .map((position) => {
+                    return this.getTileAtPosition(position);
+                })
+                .find((tile) => tile && !tile.isEmpty);
+
+            if (movableTile) {
+                this.exchangeTilePositions(
+                    emptyTile,
+                    movableTile
+                );
+
+                break;
+            }
         }
     }
+}
 
     createBoardCells() {
         this.boardContainer = this.add.container(0, 0);
@@ -742,165 +733,147 @@ export default class PlayScene extends Phaser.Scene {
         });
     }
 
-    createTileSprites() {
-        const texture = this.textures.get(
-            this.selectedImage
+ createTileSprites() {
+    const texture = this.textures.get(
+        this.selectedImage
+    );
+    
+    if (!texture) {
+        console.error(
+            `BlankShift: Image texture "${this.selectedImage}" was not found.`
         );
-
-        if (!texture) {
-            console.error(
-                `BlankShift: Image texture "${this.selectedImage}" was not found.`
-            );
-
+        
+        return;
+    }
+    
+    const source = texture.getSourceImage();
+    
+    const sourceTileWidth =
+        source.width / this.gridSize;
+    
+    const sourceTileHeight =
+        source.height / this.gridSize;
+    
+    this.imageKey = this.selectedImage;
+    
+    this.tiles.forEach((tile) => {
+        const cell = this.cells[tile.position];
+        
+        if (!cell) {
             return;
         }
-
-        const source = texture.getSourceImage();
-
-        const sourceTileWidth =
-            source.width / this.gridSize;
-
-        const sourceTileHeight =
-            source.height / this.gridSize;
-
-        this.imageKey = this.selectedImage;
-
-        for (
-            let index = 0;
-            index < this.totalTiles;
-            index++
-        ) {
-            if (index === 0) {
-                continue;
-            }
-
-            const tileTextureKey =
-                `blankshift_${this.selectedImage}_tile_${index}`;
-
-            if (this.textures.exists(tileTextureKey)) {
-                this.textures.remove(tileTextureKey);
-            }
-
-            const canvasWidth = Math.max(
-                1,
-                Math.round(sourceTileWidth)
-            );
-
-            const canvasHeight = Math.max(
-                1,
-                Math.round(sourceTileHeight)
-            );
-
-            const canvasTexture =
-                this.textures.createCanvas(
-                    tileTextureKey,
-                    canvasWidth,
-                    canvasHeight
-                );
-
-            if (!canvasTexture) {
-                console.error(
-                    `BlankShift: Could not create texture "${tileTextureKey}".`
-                );
-
-                continue;
-            }
-
-            const context = canvasTexture.getContext();
-
-            const sourceX = Math.round(
-                (index % this.gridSize) * sourceTileWidth
-            );
-
-            const sourceY = Math.round(
-                Math.floor(index / this.gridSize) *
-                sourceTileHeight
-            );
-
-            context.drawImage(
-                source,
-                sourceX,
-                sourceY,
-                Math.round(sourceTileWidth),
-                Math.round(sourceTileHeight),
-                0,
-                0,
+        
+        cell.setData("tile", tile);
+        
+        if (tile.isEmpty) {
+            tile.sprite = null;
+            return;
+        }
+        
+        const tileTextureKey =
+            `blankshift_${this.selectedImage}_tile_${tile.id}`;
+        
+        if (this.textures.exists(tileTextureKey)) {
+            this.textures.remove(tileTextureKey);
+        }
+        
+        const canvasWidth = Math.max(
+            1,
+            Math.round(sourceTileWidth)
+        );
+        
+        const canvasHeight = Math.max(
+            1,
+            Math.round(sourceTileHeight)
+        );
+        
+        const canvasTexture =
+            this.textures.createCanvas(
+                tileTextureKey,
                 canvasWidth,
                 canvasHeight
             );
-
-            canvasTexture.refresh();
+        
+        if (!canvasTexture) {
+            console.error(
+                `BlankShift: Could not create texture "${tileTextureKey}".`
+            );
+            
+            return;
         }
-
-        this.tiles.forEach((tile) => {
-            const cell = this.cells[tile.position];
-
-            cell.setData("tile", tile);
-
-            if (tile.isEmpty) {
-                tile.sprite = null;
-                return;
-            }
-
-            const tileTextureKey =
-                `blankshift_${this.selectedImage}_tile_${tile.id}`;
-
-            if (!this.textures.exists(tileTextureKey)) {
-                console.error(
-                    `BlankShift: Tile texture "${tileTextureKey}" was not found.`
-                );
-
-                tile.sprite = null;
-                return;
-            }
-
-            const sprite = this.add.image(
-                this.tileSize / 2,
-                this.tileSize / 2,
-                tileTextureKey
-            );
-
-            this.restoreTileDisplaySize(sprite);
-
-            sprite.setInteractive({
-                draggable: true,
-                useHandCursor: true
-            });
-
-            sprite.setData("tileId", tile.id);
-
-            sprite.setData(
-                "cellPosition",
-                tile.position
-            );
-
-            cell.add(sprite);
-
-            tile.sprite = sprite;
-
-            this.tileSprites.push(sprite);
+        
+        const context = canvasTexture.getContext();
+        
+        const sourceX = Math.round(
+            (tile.id % this.gridSize) * sourceTileWidth
+        );
+        
+        const sourceY = Math.round(
+            Math.floor(tile.id / this.gridSize) *
+            sourceTileHeight
+        );
+        
+        context.drawImage(
+            source,
+            sourceX,
+            sourceY,
+            Math.round(sourceTileWidth),
+            Math.round(sourceTileHeight),
+            0,
+            0,
+            canvasWidth,
+            canvasHeight
+        );
+        
+        canvasTexture.refresh();
+        
+        const sprite = this.add.image(
+            this.tileSize / 2,
+            this.tileSize / 2,
+            tileTextureKey
+        );
+        
+        this.restoreTileDisplaySize(sprite);
+        
+        sprite.setInteractive({
+            draggable: true,
+            useHandCursor: true
         });
-
-        this.input.setDraggable(this.tileSprites);
-
-        this.input.on(
-            "dragstart",
-            this.handleDragStart,
-            this
+        
+        sprite.setData("tileId", tile.id);
+        
+        sprite.setData(
+            "cellPosition",
+            tile.position
         );
-
-        this.input.on(
-            "drag",
-            this.handleDrag,
-            this
-        );
-
-        this.input.on(
-            "dragend",
-            this.handleDragEnd,
-            this
-        );
-    }
+        
+        cell.add(sprite);
+        
+        tile.sprite = sprite;
+        
+        this.tileSprites.push(sprite);
+    });
+    
+    this.input.setDraggable(this.tileSprites);
+    
+    this.input.on(
+        "dragstart",
+        this.handleDragStart,
+        this
+    );
+    
+    this.input.on(
+        "drag",
+        this.handleDrag,
+        this
+    );
+    
+    this.input.on(
+        "dragend",
+        this.handleDragEnd,
+        this
+    );
+}
 
     restoreTileDisplaySize(sprite) {
         if (!sprite) {
@@ -1247,10 +1220,14 @@ export default class PlayScene extends Phaser.Scene {
     }
 
     isSolved() {
-        return this.tiles.every((tile) => {
-            return tile.position === tile.correctPosition;
-        });
-    }
+    return this.tiles.every((tile) => {
+        if (tile.isEmpty) {
+            return true;
+        }
+        
+        return tile.position === tile.correctPosition;
+    });
+}
 
     restartPuzzle() {
         if (

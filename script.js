@@ -12,6 +12,7 @@ const gameConfig = {
   height: window.innerHeight,
   
   backgroundColor: "#080b16",
+  transparent: true,
   
   scale: {
     mode: Phaser.Scale.RESIZE,

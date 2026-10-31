@@ -61,6 +61,8 @@ export default class PreloadScene extends Phaser.Scene {
     });
     
     const images = [
+      "123",
+      "abc",
       "alligator",
       "bear",
       "chicken",
@@ -78,7 +80,7 @@ export default class PreloadScene extends Phaser.Scene {
   }
   
   create() {
-    this.registry.set("selectedImage", "alligator");
+    this.registry.set("selectedImage", "123");
     this.registry.set("shuffleCount", 80);
     
     this.scene.start("MenuScene");
