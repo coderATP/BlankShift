@@ -114,7 +114,7 @@ export default class TutorialScene extends Phaser.Scene {
             panelTop + panelHeight * 0.105,
             "HOW TO PLAY",
             {
-                fontFamily: "Arial",
+                fontFamily: "Mario",
                 fontSize: `${headingFontSize}px`,
                 fontStyle: "bold",
                 color: "#20d9ff",
@@ -181,7 +181,7 @@ export default class TutorialScene extends Phaser.Scene {
             {
                 heading: "YOUR GOAL",
                 body:
-                    "Welcome to BlankShift! Your mission is " +
+                    "Welcome to Shiftile! Your mission is " +
                     "simple: rearrange the picture tiles until " +
                     "the original picture is back together."
             },
@@ -250,7 +250,7 @@ export default class TutorialScene extends Phaser.Scene {
                 contentY + 12,
                 section.heading,
                 {
-                    fontFamily: "Arial",
+                    fontFamily: "AngryBird",
                     fontSize: `${bodyFontSize + 1}px`,
                     fontStyle: "bold",
                     color: "#20d9ff",
@@ -268,7 +268,7 @@ export default class TutorialScene extends Phaser.Scene {
                 contentY,
                 section.body,
                 {
-                    fontFamily: "Arial",
+                    fontFamily: "Serif",
                     fontSize: `${bodyFontSize}px`,
                     color: "#d7e3f7",
                     align: "left",
@@ -412,7 +412,7 @@ export default class TutorialScene extends Phaser.Scene {
                 viewportBottom + 5,
                 "SCROLL TO READ MORE",
                 {
-                    fontFamily: "Arial",
+                    fontFamily: "AngryBird",
                     fontSize: "10px",
                     fontStyle: "bold",
                     color: "#94a3bd",

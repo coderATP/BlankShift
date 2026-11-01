@@ -87,7 +87,7 @@ export class Button {
             0,
             label,
             {
-                fontFamily: "Arial",
+                fontFamily: "AngryBird",
                 fontSize: `${this.calculateFontSize(width, height)}px`,
                 fontStyle: "bold",
                 color: "#f2f8ff",

@@ -38,21 +38,21 @@ export default class MenuScene extends Phaser.Scene {
     
     createTitle(width, height) {
         const titleFontSize = Math.max(
-            34,
+            30,
             Math.min(64, Math.floor(width * 0.12))
         );
         
         const subtitleFontSize = Math.max(
-            14,
+            20,
             Math.min(24, Math.floor(width * 0.045))
         );
         
         this.titleText = this.add.text(
             width / 2,
             height * 0.23,
-            "BLANKSHIFT",
+            "SHIFTILE",
             {
-                fontFamily: "Arial",
+                fontFamily: "Mario",
                 fontSize: `${titleFontSize}px`,
                 fontStyle: "bold",
                 color: "#20d9ff",
@@ -77,7 +77,7 @@ export default class MenuScene extends Phaser.Scene {
             height * 0.23 + titleFontSize + 4,
             "Every Piece Has Its Place.",
             {
-                fontFamily: "Arial",
+                fontFamily: "AngryBird",
                 fontSize: `${subtitleFontSize}px`,
                 color: "#94a3bd",
                 align: "center",

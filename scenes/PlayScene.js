@@ -813,7 +813,7 @@ shuffleBoard() {
     
     if (!texture) {
         console.error(
-            `BlankShift: Image texture "${this.selectedImage}" was not found.`
+            `Shiftile: Image texture "${this.selectedImage}" was not found.`
         );
         
         return;
@@ -844,7 +844,7 @@ shuffleBoard() {
         }
         
         const tileTextureKey =
-            `blankshift_${this.selectedImage}_tile_${tile.id}`;
+            `shiftile_${this.selectedImage}_tile_${tile.id}`;
         
         if (this.textures.exists(tileTextureKey)) {
             this.textures.remove(tileTextureKey);
@@ -869,7 +869,7 @@ shuffleBoard() {
         
         if (!canvasTexture) {
             console.error(
-                `BlankShift: Could not create texture "${tileTextureKey}".`
+                `Shiftile: Could not create texture "${tileTextureKey}".`
             );
             
             return;

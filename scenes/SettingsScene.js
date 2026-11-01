@@ -227,16 +227,16 @@ createHeading() {
     );
 
     const subtitleFontSize = Math.max(
-        13,
+        20,
         Math.min(18, Math.floor(width * 0.038))
     );
 
     this.titleText = this.add.text(
         width / 2,
         headingY,
-        "PUZZLE SETTINGS",
+        "SETTINGS",
         {
-            fontFamily: "Arial",
+            fontFamily: "Mario",
             fontSize: `${titleFontSize}px`,
             fontStyle: "bold",
             color: "#20d9ff",
@@ -259,7 +259,7 @@ createHeading() {
         subtitleY,
         "Choose your picture",
         {
-            fontFamily: "Arial",
+            fontFamily: "AngryBird",
             fontSize: `${subtitleFontSize}px`,
             color: "#94a3bd",
             align: "center",
@@ -324,7 +324,7 @@ createImageGallery() {
     cardHeight / 2 - 18,
     "",
     {
-        fontFamily: "Arial",
+        fontFamily: "AngryBird",
         fontSize: `${Math.max(
             11,
             Math.min(16, cardWidth * 0.075)
@@ -493,7 +493,7 @@ createGalleryNavigation() {
         navigationY,
         "",
         {
-            fontFamily: "Arial",
+            fontFamily: "AngryBird",
             fontSize: "14px",
             fontStyle: "bold",
             color: "#94a3bd",
@@ -918,7 +918,7 @@ image.setPosition(
                 this.layout.cardHeight / 2 - 18,
                 countText,
                 {
-                    fontFamily: "Arial",
+                    fontFamily: "Serif",
                     fontSize: `${Math.max(
                         11,
                         Math.min(15, this.layout.cardWidth * 0.065)

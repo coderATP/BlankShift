@@ -43,6 +43,26 @@ const gameConfig = {
 ]
 };
 
-const game = new Phaser.Game(gameConfig);
+let game;
+
+async function initializeGame() {
+  try {
+    await Promise.all([
+      document.fonts.load('10px "Mario"'),
+      document.fonts.load('20px "AngryBird"')
+    ]);
+    
+    await document.fonts.ready;
+    
+    game = new Phaser.Game(gameConfig);
+    
+  } catch (error) {
+    console.error("Font loading failed:", error);
+    
+    game = new Phaser.Game(gameConfig);
+  }
+}
+
+initializeGame();
 
 export default game;

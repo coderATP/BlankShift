@@ -12,10 +12,10 @@ export default class PreloadScene extends Phaser.Scene {
     this.add.text(
       width / 2,
       height / 2 - 50,
-      "BLANKSHIFT",
+      "SHIFTILE",
       {
-        fontFamily: "Arial",
-        fontSize: "48px",
+        fontFamily: "Mario",
+        fontSize: "40px",
         fontStyle: "bold",
         color: "#20d9ff"
       }
@@ -26,7 +26,7 @@ export default class PreloadScene extends Phaser.Scene {
       height / 2 + 10,
       "Preparing your puzzle...",
       {
-        fontFamily: "Arial",
+        fontFamily: "AngryBird",
         fontSize: "20px",
         color: "#94a3bd"
       }
