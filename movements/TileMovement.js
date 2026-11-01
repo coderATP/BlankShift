@@ -83,6 +83,30 @@ export class TileMovement extends Movement {
         scene.isAnimating = true;
 
         /*
+         * Capture the sprite's actual world-space position
+         * before removing it from its parent cell.
+         */
+
+        const bounds = this.sprite.getBounds();
+
+        const worldX = bounds.centerX;
+        const worldY = bounds.centerY;
+
+        /*
+         * Detach the sprite from its source cell and place
+         * it on the scene display list.
+         */
+
+        sourceCell.remove(this.sprite);
+
+        scene.add.existing(this.sprite);
+
+        this.sprite.setPosition(
+            worldX,
+            worldY
+        );
+
+        /*
          * Exchange the logical positions of the moving tile
          * and the empty tile.
          */
@@ -108,7 +132,6 @@ export class TileMovement extends Movement {
 
         /*
          * Keep the sprite associated with the moving tile.
-         * The empty tile does not have a sprite.
          */
 
         this.tile.sprite = this.sprite;
@@ -121,9 +144,6 @@ export class TileMovement extends Movement {
 
         /*
          * Calculate the destination in scene coordinates.
-         *
-         * The sprite is temporarily a scene-level object,
-         * not a child of its original cell.
          */
 
         const targetX =
@@ -136,7 +156,6 @@ export class TileMovement extends Movement {
 
         /*
          * Preserve the tile's intended display dimensions.
-         * Do not use scale: 1 or setScale(1).
          */
 
         scene.restoreTileDisplaySize(this.sprite);
@@ -192,7 +211,10 @@ export class TileMovement extends Movement {
                  * Check for victory after the animation.
                  */
 
-                if (scene.isSolved()) {
+                if (
+                    !scene.isReplaying &&
+                    scene.isSolved()
+                ) {
                     scene.showVictory();
                 }
             }
@@ -249,9 +271,6 @@ export class TileMovement extends Movement {
         /*
          * Capture the sprite's actual world-space center
          * before removing it from its current cell.
-         *
-         * getBounds() avoids assuming that local sprite
-         * coordinates are also world coordinates.
          */
 
         const bounds = this.sprite.getBounds();
@@ -277,9 +296,6 @@ export class TileMovement extends Movement {
 
         /*
          * Restore the logical board state.
-         *
-         * The moving tile returns to its original position,
-         * and the empty tile returns to the destination.
          */
 
         scene.exchangeTilePositions(
@@ -318,8 +334,7 @@ export class TileMovement extends Movement {
             scene.tileSize / 2;
 
         /*
-         * Animate the tile back to its original cell without
-         * changing its scale.
+         * Animate the tile back to its original cell.
          */
 
         scene.tweens.add({
@@ -335,10 +350,6 @@ export class TileMovement extends Movement {
             ease: "Cubic.easeOut",
 
             onComplete: () => {
-                /*
-                 * Restore cell ownership after the animation.
-                 */
-
                 originalCell.add(this.sprite);
 
                 this.sprite.setPosition(
@@ -359,20 +370,11 @@ export class TileMovement extends Movement {
 
                 scene.isAnimating = false;
 
-                /*
-                 * Check the restored board state.
-                 */
-
                 if (scene.isSolved()) {
                     scene.showVictory();
                 }
             }
         });
-
-        /*
-         * Mark this command as undone so it cannot be
-         * executed again accidentally.
-         */
 
         this.hasExecuted = false;
 
@@ -390,27 +392,15 @@ export class TileMovement extends Movement {
             return false;
         }
 
-        /*
-         * The moving tile must not be the empty tile.
-         */
-
         if (this.tile.isEmpty || !this.emptyTile.isEmpty) {
             return false;
         }
-
-        /*
-         * A tile cannot move into its own position.
-         */
 
         if (
             this.tile.position === this.emptyTile.position
         ) {
             return false;
         }
-
-        /*
-         * The destination must be adjacent to the moving tile.
-         */
 
         if (
             !scene.areAdjacent(
@@ -421,17 +411,9 @@ export class TileMovement extends Movement {
             return false;
         }
 
-        /*
-         * The sprite must belong to the tile being moved.
-         */
-
         if (this.tile.sprite !== this.sprite) {
             return false;
         }
-
-        /*
-         * Confirm the destination is the requested position.
-         */
 
         if (
             this.emptyTile.position !== this.destinationPosition

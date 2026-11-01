@@ -14,6 +14,15 @@ import {
 import {
     calculatePuzzleLayout
 } from "../utils/PuzzleLayout.js";
+import {
+    PuzzlePreview
+} from "../entities/PuzzlePreview.js";
+import {
+    BoardBorder
+} from "../entities/BoardBorder.js";
+
+import { ReplayManager } from "../managers/ReplayManager.js";
+
 
 export default class PlayScene extends Phaser.Scene {
     constructor() {
@@ -54,7 +63,8 @@ export default class PlayScene extends Phaser.Scene {
 
         this.moveText = null;
         this.imageKey = null;
-
+        
+        this.boardBorder = null; 
         this.boardContainer = null;
 
         this.resizeTimer = null;
@@ -65,12 +75,16 @@ export default class PlayScene extends Phaser.Scene {
         this.victoryButton = null;
         this.emptyTilePositions = [0]; 
         this.solvedPositionMaps = [];
+        this.replayManager = null;
+this.isReplaying = false;
         this.commandHandler = new CommandHandler(this);
 
-        this.handleResize = this.handleResize.bind(this);
+       this.handleResize = this.handleResize.bind(this);
     }
 
     create() {
+        this.audioManager =
+    this.game.scene.keys.PreloadScene.audioManager;
         this.selectedImage =
             this.registry.get("selectedImage") || "alligator";
 
@@ -78,6 +92,7 @@ export default class PlayScene extends Phaser.Scene {
             this.registry.get("shuffleCount") || 80;
 
         this.commandHandler.reset();
+        this.replayManager = new ReplayManager(this);
 
         this.moveCount = 0;
 
@@ -105,6 +120,19 @@ export default class PlayScene extends Phaser.Scene {
         this.updateGameSize();
 
         this.calculateLayout();
+        this.boardBorder = new BoardBorder(this);
+
+this.boardBorder.updateLayout(
+    this.boardX,
+    this.boardY,
+    this.boardSize
+);
+        this.puzzlePreview = new PuzzlePreview(
+    this,
+    this.selectedImage
+);
+
+this.updatePuzzlePreviewLayout();
 
         this.createSolvedBoard();
 
@@ -173,6 +201,16 @@ export default class PlayScene extends Phaser.Scene {
             this.handleResize
         );
     }
+    updatePuzzlePreviewLayout() {
+    if (!this.puzzlePreview) {
+        return;
+    }
+
+    this.puzzlePreview.updateLayout(
+        this.scale.width,
+        this.scale.height
+    );
+}
 
     shutdown() {
         this.scale.off(
@@ -180,7 +218,21 @@ export default class PlayScene extends Phaser.Scene {
             this.handleResize,
             this
         );
+        if (this.replayManager) {
+    this.replayManager.destroy();
+    
+    this.replayManager = null;
+}
 
+        if (this.boardBorder) {
+    this.boardBorder.destroy();
+
+    this.boardBorder = null;
+} 
+        if (this.puzzlePreview) {
+    this.puzzlePreview.destroy();
+    this.puzzlePreview = null;
+}
         window.removeEventListener(
             "resize",
             this.handleResize
@@ -274,6 +326,14 @@ export default class PlayScene extends Phaser.Scene {
 
         try {
             this.calculateLayout();
+            if (this.boardBorder) {
+    this.boardBorder.updateLayout(
+        this.boardX,
+        this.boardY,
+        this.boardSize
+    );
+}
+            this.updatePuzzlePreviewLayout();
 
             this.updateBoardLayout();
 
@@ -526,6 +586,9 @@ export default class PlayScene extends Phaser.Scene {
             );
         }
     );
+    if (this.replayManager) {
+    this.replayManager.updateButtonLayout();
+}
 }
 
 createSolvedBoard() {
@@ -898,11 +961,12 @@ shuffleBoard() {
 
     handleDragStart(pointer, gameObject) {
         if (
-            this.isAnimating ||
-            this.isGameOver ||
-            this.isDragging
-        ) {
-            return;
+    this.isAnimating ||
+    this.isGameOver ||
+    this.isDragging ||
+    this.isReplaying
+) {
+    return;
         }
 
         const tileId = gameObject.getData("tileId");
@@ -966,9 +1030,13 @@ shuffleBoard() {
             return;
         }
 
-        if (this.isAnimating || this.isGameOver) {
-            return;
-        }
+        if (
+    this.isAnimating ||
+    this.isGameOver ||
+    this.isReplaying
+) {
+    return;
+}
 
         gameObject.setPosition(
             pointer.x - this.dragPointerOffset.x,
@@ -1247,73 +1315,37 @@ shuffleBoard() {
         this.scene.restart();
     }
 
-    showVictory() {
-        if (this.isGameOver) {
-            return;
-        }
-
-        this.isGameOver = true;
-
-        const width = this.scale.width;
-        const height = this.scale.height;
-
-        const overlay = this.add.rectangle(
-            width / 2,
-            height / 2,
-            width,
-            height,
-            0x080b16,
-            0.92
-        );
-
-        overlay.setDepth(200);
-
-        const title = this.add.text(
-            width / 2,
-            height / 2 - 70,
-            "PUZZLE SOLVED!",
-            {
-                fontFamily: "Arial",
-                fontSize: "32px",
-                fontStyle: "bold",
-                color: "#20d9ff",
-                align: "center"
-            }
-        ).setOrigin(0.5).setDepth(201);
-
-        const message = this.add.text(
-            width / 2,
-            height / 2,
-            `You reconstructed the picture!\nMoves: ${this.moveCount}`,
-            {
-                fontFamily: "Arial",
-                fontSize: "20px",
-                color: "#f2f6ff",
-                align: "center",
-                lineSpacing: 12
-            }
-        ).setOrigin(0.5).setDepth(201);
-
-        this.victoryObjects = [
-            overlay,
-            title,
-            message
-        ];
-
-        this.victoryButton = new Button(
-            this,
-            width / 2,
-            height / 2 + 100,
-            200,
-            56,
-            "PLAY AGAIN",
-            () => {
-                this.scene.restart();
-            }
-        );
-
-        this.victoryButton.setDepth(201);
+   showVictory() {
+    if (this.isGameOver) {
+        return;
     }
+    
+    this.isGameOver = true;
+    
+    this.scene.launch("LevelCompleteScene", {
+        selectedImage: this.selectedImage,
+        moveCount: this.moveCount
+    });
+    
+    this.scene.bringToTop("LevelCompleteScene");
+    
+    this.scene.sleep();
+}
+startReplay() {
+    if (!this.replayManager) {
+        return;
+    }
+
+    this.replayManager.start();
+}
+
+stopReplay() {
+    if (!this.replayManager) {
+        return;
+    }
+
+    this.replayManager.stop();
+}
 
     updateVictoryLayout() {
         if (

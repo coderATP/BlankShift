@@ -1,3 +1,5 @@
+import AudioManager from "../managers/AudioManager.js";
+
 export default class PreloadScene extends Phaser.Scene {
   constructor() {
     super("PreloadScene");
@@ -97,12 +99,27 @@ export default class PreloadScene extends Phaser.Scene {
         `assets/images/${imageName}.jpg`
       );
     });
+    
+    const audioFiles = [
+    "shuffle",
+    "time_up",
+    "level_fail",
+    "level_complete",
+    "click"
+];
+
+audioFiles.forEach(audio => {
+    this.load.audio(
+        audio,
+        `assets/audio/${audio}.mp3`
+    );
+});
   }
   
   create() {
     this.registry.set("selectedImage", "123");
     this.registry.set("shuffleCount", 80);
-    
+    this.audioManager = new AudioManager(this);
     this.scene.start("MenuScene");
   }
 }

@@ -2,6 +2,9 @@ import PreloadScene from "./scenes/PreloadScene.js";
 import MenuScene from "./scenes/MenuScene.js";
 import SettingsScene from "./scenes/SettingsScene.js";
 import PlayScene from "./scenes/PlayScene.js";
+import LevelCompleteScene from "./scenes/LevelCompleteScene.js";
+import TutorialScene from "./scenes/TutorialScene.js";
+import CreditsScene from "./scenes/CreditsScene.js";
 
 const gameConfig = {
   type: Phaser.AUTO,
@@ -32,9 +35,12 @@ const gameConfig = {
   scene: [
     PreloadScene,
     MenuScene,
+    TutorialScene,
+    CreditsScene,
     SettingsScene,
-    PlayScene
-  ]
+    PlayScene,
+    LevelCompleteScene
+]
 };
 
 const game = new Phaser.Game(gameConfig);

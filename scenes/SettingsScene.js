@@ -62,6 +62,8 @@ super("SettingsScene");
 }
 
 create() {
+    this.audioManager =
+    this.game.scene.keys.PreloadScene.audioManager;
     const selectedImage =
         this.registry.get("selectedImage");
 
@@ -453,8 +455,12 @@ createGalleryNavigation() {
         buttonHeight,
         "<",
         () => {
-            this.changePage(-1);
-        }
+    this.audioManager.play(
+        this.audioManager.clickSound
+    );
+    
+    this.changePage(-1);
+}
     );
 
     this.nextButton = new Button(
@@ -465,8 +471,12 @@ createGalleryNavigation() {
         buttonHeight,
         ">",
         () => {
-            this.changePage(1);
-        }
+    this.audioManager.play(
+        this.audioManager.clickSound
+    );
+    
+    this.changePage(1);
+}
     );
 
     this.previousButton.setDepth(2);
@@ -511,8 +521,12 @@ createSortButton() {
         36,
         "SORT: ALPHABETICAL",
         () => {
-            this.toggleSortMode();
-        }
+    this.audioManager.play(
+        this.audioManager.clickSound
+    );
+    
+    this.toggleSortMode();
+}
     );
 
     this.sortButton.setDepth(2);
@@ -548,8 +562,12 @@ createActionButtons() {
         buttonHeight,
         "BACK",
         () => {
-            this.scene.start("MenuScene");
-        }
+    this.audioManager.play(
+        this.audioManager.clickSound
+    );
+    
+    this.scene.start("MenuScene");
+}
     );
 
     this.startButton = new Button(
@@ -560,13 +578,17 @@ createActionButtons() {
         buttonHeight,
         "PLAY",
         () => {
-            this.registry.set(
-                "selectedImage",
-                this.selectedImage
-            );
-
-            this.scene.start("PlayScene");
-        }
+    this.audioManager.play(
+        this.audioManager.clickSound
+    );
+    
+    this.registry.set(
+        "selectedImage",
+        this.selectedImage
+    );
+    
+    this.scene.start("PlayScene");
+}
     );
 
     this.backButton.setDepth(2);

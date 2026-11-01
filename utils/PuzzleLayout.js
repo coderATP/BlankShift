@@ -5,85 +5,95 @@ export function calculatePuzzleLayout(
 ) {
     const orientation =
         width >= height ? "landscape" : "portrait";
-
+    
+    const borderThickness = 15;
+    
     /*
-     * Portrait: use the full screen width.
-     * Landscape: use the full screen height.
+     * Reserve space for the outer board border.
      */
-    const boardSize =
-        orientation === "portrait"
-            ? width
-            : height;
-
+    const availableBoardSize =
+        orientation === "portrait" ?
+        width :
+        height;
+    
+    const boardSize = Math.max(
+        1,
+        availableBoardSize -
+        borderThickness * 2
+    );
+    
     const tileSize = boardSize / gridSize;
-
+    
     /*
      * Center the square puzzle on both axes.
      */
     const boardX = (width - boardSize) / 2;
     const boardY = (height - boardSize) / 2;
-
+    
     const layout = {
         width,
         height,
         orientation,
-
+        
         boardSize,
         boardX,
         boardY,
-
+        
+        borderThickness,
+        
         tileSize,
-
+        
         tileDisplaySize: Math.max(
             1,
             tileSize - 4
         )
     };
-
+    
     if (orientation === "portrait") {
-        /*
-         * All four buttons occupy the space
-         * beneath the board.
-         */
-        const boardBottom = boardY + boardSize;
-
+        const boardBottom =
+            boardY + boardSize;
+        
         const availableHeight =
-            height - boardBottom;
-
+            height - boardBottom - borderThickness;
+        
         layout.controlsY =
-            boardBottom + availableHeight / 2;
-
+            boardBottom +
+            borderThickness +
+            availableHeight / 2;
+        
         layout.buttonHeight = Math.min(
             64,
             Math.max(36, availableHeight - 12)
         );
-
+        
         return layout;
     }
-
+    
     /*
-     * Landscape:
-     * The board fills the screen height.
-     *
-     * Use the remaining horizontal space
-     * for two buttons on each side.
+     * Landscape layout.
      */
-    const sideSpace = boardX;
-
+    const outerBoardLeft =
+        boardX - borderThickness;
+    
+    const outerBoardRight =
+        boardX + boardSize + borderThickness;
+    
+    const sideSpace = outerBoardLeft;
+    
     layout.leftControlsX = sideSpace / 2;
-
+    
     layout.rightControlsX =
-        boardX + boardSize + sideSpace / 2;
-
+        outerBoardRight + sideSpace / 2;
+    
     layout.sideButtonWidth = Math.max(
         1,
         sideSpace - 16
     );
-
+    
     layout.buttonHeight = Math.min(
         72,
         height * 0.16
     );
-
+    
     return layout;
 }

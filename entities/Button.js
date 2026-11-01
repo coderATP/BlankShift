@@ -450,7 +450,15 @@ export class Button {
 
         return this;
     }
+    setVisible(visible) {
+    this.container.setVisible(visible);
 
+    if (this.background.input) {
+        this.background.input.enabled = visible;
+    }
+
+    return this;
+} 
     destroy() {
         this.container.destroy();
     }
@@ -461,6 +469,10 @@ export function createGameControls(scene, layout) {
         {
             label: "UNDO",
             callback: () => {
+                scene.audioManager.play(
+                    scene.audioManager.clickSound
+                );
+
                 scene.commandHandler.undo();
             },
             color: 0x18243a
@@ -468,6 +480,10 @@ export function createGameControls(scene, layout) {
         {
             label: "SHUFFLE",
             callback: () => {
+                scene.audioManager.play(
+                    scene.audioManager.shuffleSound
+                );
+
                 scene.restartPuzzle();
             },
             color: 0x12344a
@@ -475,6 +491,10 @@ export function createGameControls(scene, layout) {
         {
             label: "RESTART",
             callback: () => {
+                scene.audioManager.play(
+                    scene.audioManager.shuffleSound
+                );
+
                 scene.restartPuzzle();
             },
             color: 0x18243a
@@ -482,6 +502,10 @@ export function createGameControls(scene, layout) {
         {
             label: "MENU",
             callback: () => {
+                scene.audioManager.play(
+                    scene.audioManager.clickSound
+                );
+
                 scene.scene.start("MenuScene");
             },
             color: 0x18243a
