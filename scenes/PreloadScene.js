@@ -68,7 +68,27 @@ export default class PreloadScene extends Phaser.Scene {
       "chicken",
       "dog",
       "elephant",
-      "fox"
+      "fox",
+      "giraffe",
+      "horse",
+      "iguana",
+      "jaguar",
+      "lion",
+      "monkey",
+      "newt",
+      "octopus",
+      "parrot",
+      "quail",
+      "rat",
+      "snake",
+      "tiger",
+      "turtle",
+      "urial",
+      "vulture",
+      "wolf",
+      "x-ray tetra",
+      "yak",
+      "zebra"
     ];
     
     images.forEach((imageName) => {

@@ -1,6 +1,10 @@
 import { CommandHandler } from "../CommandHandler.js";
 import { TileMovement } from "../movements/TileMovement.js";
 import { getEmptyTilePositions} from "../utils/EmptyTileConfig.js";
+import {
+    getSolvedPositionMaps,
+    isPuzzleSolved
+} from "../utils/PuzzleSolution.js";
 
 import {
     Button,
@@ -60,6 +64,7 @@ export default class PlayScene extends Phaser.Scene {
         this.victoryObjects = [];
         this.victoryButton = null;
         this.emptyTilePositions = [0]; 
+        this.solvedPositionMaps = [];
         this.commandHandler = new CommandHandler(this);
 
         this.handleResize = this.handleResize.bind(this);
@@ -523,9 +528,14 @@ export default class PlayScene extends Phaser.Scene {
     );
 }
 
-  createSolvedBoard() {
+createSolvedBoard() {
     this.emptyTilePositions = getEmptyTilePositions(
         this.selectedImage
+    );
+
+    this.solvedPositionMaps = getSolvedPositionMaps(
+        this.emptyTilePositions,
+        this.gridSize
     );
 
     this.tiles = [];
@@ -1220,13 +1230,10 @@ shuffleBoard() {
     }
 
     isSolved() {
-    return this.tiles.every((tile) => {
-        if (tile.isEmpty) {
-            return true;
-        }
-        
-        return tile.position === tile.correctPosition;
-    });
+    return isPuzzleSolved(
+        this.tiles,
+        this.solvedPositionMaps
+    );
 }
 
     restartPuzzle() {
