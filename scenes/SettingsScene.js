@@ -62,6 +62,12 @@ super("SettingsScene");
 }
 
 create() {
+    this.navigationButtons = [];
+this.menuElements = [];
+this.imageCards = [];
+
+this.isTransitioning = false;
+this.pageTransitionTween = null;
     this.audioManager =
     this.game.scene.keys.PreloadScene.audioManager;
     const selectedImage =
@@ -87,15 +93,17 @@ create() {
 
     this.createHeading();
 
-    this.createImageGallery();
+this.createImageGallery();
 
-    this.createGalleryNavigation();
+this.createGalleryNavigation();
 
-    this.createSortButton();
+this.createSortButton();
 
-    this.createActionButtons();
+this.createActionButtons();
 
-    this.updateGallery();
+this.updateSortButton();
+
+this.updateGallery();
 
     this.scale.off(
         Phaser.Scale.Events.RESIZE,
@@ -383,7 +391,6 @@ card.setData("label", label);
         this.imageCards.push(card);
     });
 
-    this.updateGallery();
 }
 
 getCardPositions() {
@@ -1040,19 +1047,27 @@ handleResize() {
 }
 
 shutdown() {
+    // Stop any active page transition.
+    
     if (this.pageTransitionTween) {
         this.pageTransitionTween.remove();
         this.pageTransitionTween = null;
     }
-
+    
+    // Stop all active tweens.
+    
     this.tweens.killAll();
-
+    
+    // Remove resize listener.
+    
     this.scale.off(
         Phaser.Scale.Events.RESIZE,
         this.handleResize,
         this
     );
-
+    
+    // Destroy navigation and action buttons.
+    
     this.navigationButtons.forEach(
         (button) => {
             if (button) {
@@ -1060,7 +1075,9 @@ shutdown() {
             }
         }
     );
-
+    
+    // Destroy image cards and their children.
+    
     this.imageCards.forEach(
         (card) => {
             if (card) {
@@ -1068,10 +1085,35 @@ shutdown() {
             }
         }
     );
-
+    
+    // Destroy heading, subtitle and page counter.
+    
+    this.menuElements.forEach(
+        (element) => {
+            if (element) {
+                element.destroy();
+            }
+        }
+    );
+    
+    // Clear references.
+    
     this.navigationButtons = [];
-
+    
+    this.menuElements = [];
+    
     this.imageCards = [];
+    
+    this.titleText = null;
+    this.subtitleText = null;
+    this.pageCounter = null;
+    
+    this.previousButton = null;
+    this.nextButton = null;
+    this.sortButton = null;
+    this.backButton = null;
+    this.startButton = null;
+    
+    this.isTransitioning = false;
 }
-
 }
